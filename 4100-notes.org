@@ -1,0 +1,321 @@
+
+* How can we describe Java?
+
+  - exclusively object-oriented
+  - class-oriented / polymorphic
+  - multithreaded (concurrent)
+  - structured (subroutines, blocks, formal loops)
+  - garbage collected (automatic memory management)
+  - call-by-value parameter passing (despite multiple references to shared
+    object)
+  - imperative (statements change state / procedural)
+  - generic
+  - portable (write once / run anywhere) / byte-compiled
+  - statically typed
+  - strongly typed (type safety)
+  - statically scoped 
+  - exceptions
+  - reflective
+
+
+* C
+
+  - originally 1973 by Dennis Ritchie (The R in K&R)
+  - ANSI C standard since 1989
+  - imperative: statements affect program state
+  - structured: formal control structures / blocks
+  - static typing: data type property assigned at compile time
+  - weakly typed (=void*=) : implicit type casting under some conditions
+  - compiles all the way to the hardware (executables not portable)
+  - allows for raw memory management and manipulation
+
+
+** hello world (the parts of)
+
+   #+begin_src C
+     #include <stdio.h>              /* preprocessor directive */
+
+     int main(int argc, char *argv[]) /* program entry point with command line arguments */
+     {
+         printf("Hello World\n");    /* a subroutine that does IO -- declared in stdio.h */
+         return 0;                   /* return code from main -> exit code for program */
+     }
+
+   #+end_src
+
+
+** *language system*: system of components to make a programming language practical
+
+** source --[preprocessor]--> translation unit --[compiler]--> object file --[linker]--> executable
+
+*** A translation unit -- source for a single object file
+     
+** binding times
+   The act of associating /names/ with properties (data type, address, value ) is called /binding/, and
+   different properties are bound at different times.
+
+
+   #+begin_src C
+     int i;
+     void main() 
+     {
+         for (i=1; i<100; i++)
+             fred(i);
+     }
+   #+end_src
+
+   - *language definition time*
+              
+     meaning of keywords is bound -- all implementations must behave the
+     same way (void, for)
+
+   - *language implementation time*
+
+     e.g. the range of values for ~int~ is implementation dependent.  (not the 
+     same in java)
+
+   - *compile time*
+
+     data type for ~i~ is bound here.  (static typing)
+
+   - *link time*
+
+     definition of ~fred~
+
+   - *load time*
+
+     memory address for all of these symbols
+
+   - *runtime*
+
+     ~i~ takes on a sequence of values
+
+
+   - early binding : before runtime   / late binding == runtime binding
+
+   - not all language systems use all times (interpreters are not compiled)
+
+
+** C data types
+
+   :  void
+   :  char
+   :  int
+   :  float
+   :  double
+   :
+   :  // these assume int
+   :  short
+   :  long
+   :  signed
+   :  unsigned
+   :
+   : // may be optimized by using read only memory
+   : const
+   : 
+   : // no implementation-independent semantics
+   : volatile
+
+
+    
+** ~sizeof~ operator tells how many bytes a /thing/ uses (data type or variable / value)
+
+   
+** arrays and pointers are somewhat interchangeable
+   : int values[10];  -->   int* values
+
+
+*** /string/ is a null-terminated array of ~char~
+    + literal strings are read only, because they are stored in read-only
+      memory
+
+
+** struct union 
+
+   #+begin_src C
+
+     struct example 
+     {
+         int value;
+         char name[10];
+     };
+
+
+     // one or the other.. typically used with some companion variable to
+     // distinguish which field is active -- size is largest possible size
+     union u_example 
+     {
+         int value;
+         char name[10];
+     };
+
+
+
+     typedef struct 
+     {
+         int value;
+         char name[10];
+     } example;
+
+   #+end_src
+
+
+
+** typedef
+   syntactic renaming of a type
+
+   : typedef unsigned int uint
+    
+
+** enum
+
+   : enum foo {FOO_A, FOO_B, FOO_C};
+
+
+** pointer / address of
+   + all values used above were stack-allocated
+   + still call by value
+   + pointers allow functions to change parameters, but it is explicit
+    
+
+
+** malloc / free vs. stack allocated (auto)
+
+   : void* malloc(size_t size);
+
+
+** function pointers
+
+   #+begin_src c
+     int subroutine(int size)
+     {
+         printf("In a subroutine: %x\n!", data);
+         return size;
+     }
+
+     typedef int (*intfunc)(int);
+
+
+
+     int main(int argc, char *argv[])
+     {
+         // int (*func)(int) = subroutine;
+
+         intfunc func = subroutine;
+         func(50000);
+
+         return 0;
+     }
+
+   #+end_src
+
+
+
+** static storage specifier
+
+** static vs. external linkage
+*** function declaration vs definition
+*** static symbols
+
+** preprocessor
+   + include files
+
+
+   + conditional compilation
+     + header files and ifdefs to avoid multiple symbol definitions with external linkage
+
+   + pragma (openmp / user-specified warnings, etc..)
+
+** macros
+
+   + macro expansions
+     * constants (object-like macro)
+       ~#define PI 3.14159~
+
+   * macros define locations where substitution occurs
+
+
+   * function-like macro
+
+     #+begin_src C
+       #define TIMESTEN(x) x*10
+       #define PLUSONE(x) x+1
+       #define SQUARE(x) ((x)*(x))
+
+       // remove ambiguity by over-parenthesizing 
+       int main(int argc, char *argv[])
+       {
+           printf("%d\n", TIMESTEN(10+10));
+           printf("%d\n", PLUSONE(10)*2);
+
+           // sqrt called twice
+           printf("%d\n", SQUARE(sqrt(10));
+           return 0;
+       }
+
+     #+end_src
+
+   * macro parameters (call by macro expansion)
+     + free vs. bound variables (binding time)
+       in any program fragment, an occurrence of a variable that is not bound
+       is called /free/
+
+     + more on this when we talk about closures in the context of functional programming
+
+     + actual parameters to swap are program fragments with free variables
+       ~temp~ and ~a~.  When substitution occurs, ~temp~ is captured by the local
+       definition in the macro body
+
+
+       + variable capture
+
+         #+begin_src C
+           // temp is bound
+           #define SWAP(v1,v2) { int temp=v1; v1=v2; v2=temp; }
+
+           int main(int argc, char *argv[])
+           {
+               int a = 5;
+               int b = 6;
+
+               printf("a: %d; b: %d\n", a, b);
+               SWAP(a,b);
+               printf("a: %d; b: %d\n", a, b);
+
+               int temp=10;
+
+               printf("a: %d; temp: %d\n", a, temp);
+
+               //free variables a and temp
+               SWAP(a,temp);
+               printf("a: %d; temp: %d\n", a, temp);
+
+
+               return 0;
+           }
+
+         #+end_src
+
+
+
+* parameter passing (a beginning)
+  + formal parameters (specified in method)
+  + actual parameters (passed to method)
+    
+** parameter /correspondence/
+   + java and C use positional parameters
+   + other languages may have keyword parameters
+   + default parameters (C++ has this)
+
+
+     
+** call by value
+   + formal parameters are local variables in the stack frame (aka
+     /activation record/) of the called method
+   + initialized with the value of the corresponding actual parameter
+
+     
+** variable arguments in C
+   processed with system calls
+
+   
